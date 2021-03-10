@@ -1,0 +1,77 @@
+
+getwd()
+Comcast = read.csv("Comcast Telecom Complaints data.csv")
+str(Comcast)
+
+Comcast$Date = as.Date(Comcast$Date,format="%d-%m-%Y")
+View(Comcast)
+
+######### Task 2 - Represent the trend chart for number of complaints at monthly and daily 
+### granularity levels 
+#  Daily complaints chart
+Freq = table(Comcast$Date)
+Freq
+barplot(Freq, ylab="Date",xlab="Number of Complaints",main="Number of complaints by date")
+
+
+
+# Monthly complaints chart
+Comcast_month = transform(Comcast,MonthOfComplaint = as.numeric(format(Date,format="%m")))
+View(Comcast_month)
+
+Freq = table(Comcast_month$MonthOfComplaint)
+Freq
+barplot(Freq, ylab="Months",xlab="Number of Complaints",main="Number of complaints by Month")
+
+## Insights- Most of complaints are received in Month of June
+
+##### Task 3 - Provide a table with frequency of complaint types
+
+library(dplyr)
+Freq_complaints = table(Comcast$Customer.Complaint)
+Freq_complaints
+Freq_complaints_Final = arrange(as.data.frame(Freq_complaints),desc(Freq))
+View(Freq_complaints_Final)
+# Insight - Most of the complaints are around Internet and Data cap. Comcast is generic word for 
+# complaint type and does not reflect any proper reason
+
+
+#### Task 4 - Create a new categorical variable with value as - Open and Closed. Open & Pending to be 
+# categorized as 'Open' and Closed & Solved to be categorized as 'Closed'
+
+Comcast_complaint_status = transform(Comcast,FinalStatus = ifelse((Status=='Open'|Status=='Pending'),
+                                                                  "Open","Closed"))
+View(Comcast_complaint_status)
+
+
+#### Task 5 - Provide State wise status of complaints in a stacked bar chart.
+# Use the categorized variable from Q3. Provide insights on:  */
+Freq1 = table(Comcast_complaint_status$FinalStatus,Comcast_complaint_status$State)
+Freq1
+barplot(Freq1,main="Complaint Status by States","States","Number of Complaints")
+Freq2 = as.data.frame(Freq1)
+library(ggplot2)
+ggplot(Freq2,aes(x=Var2,y=Freq))+geom_bar(stat="identity")
+## Georgia has maximum complaints 
+
+
+#### Which state has highest percentage of unresolved complaints
+Freq2 = table(Comcast_complaint_status$State,Comcast_complaint_status$FinalStatus)
+Freq3 = as.data.frame(Freq2)
+Status_by_state = reshape(Freq3,idvar="Var1",timevar ='Var2',direction="wide")
+Status_by_state_Final = transform(Status_by_state,Unresolved_Pct = (Freq.Open/(Freq.Open+Freq.Closed)))
+View(Status_by_state_Final)
+
+### Kansas has most unsolved complaints
+
+
+#### Task 6- Provide percentage of complaint resolved till date for the complaints received 
+## through Internet and customer care calls
+Freq4 = table(Comcast_complaint_status$Received.Via,Comcast_complaint_status$FinalStatus)
+
+Freq4 = as.data.frame(Freq4)
+Status_by_Channel = reshape(Freq4,idvar="Var1",timevar ='Var2',direction="wide")
+Status_by_Channel_Final = transform(Status_by_Channel,Unresolved_Pct = (Freq.Open/(Freq.Open+Freq.Closed)))
+View(Status_by_Channel_Final)
+##There is not much difference in complaint resolved status through internet or customer call
+
